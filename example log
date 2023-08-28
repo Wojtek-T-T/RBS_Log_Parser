@@ -1,0 +1,92 @@
+
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NEW_JOB_RELEASED, task 1, job 1, at cycle: 134886.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 1, node 1, job 1, at cycle: 134946.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 1, node 1, job 1, at cycle: 138661.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 1, node 2, job 1, at cycle: 138667.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 3, node 4, job 1, at cycle: 138677.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 2, node 3, job 1, at cycle: 138682.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 2, node 3, job 1, at cycle: 142403.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: SEQUENCE_TERMINATED, task 1, sequence 2, after node 5, job 1, at cycle: 142404.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 3, node 4, job 1, at cycle: 144718.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: SEQUENCE_TERMINATED, task 1, sequence 3, after node 5, job 1, at cycle: 144721.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 1, node 2, job 1, at cycle: 145154.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 1, node 5, job 1, at cycle: 145167.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 4, node 6, job 1, at cycle: 145205.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 1, node 5, job 1, at cycle: 155046.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: SEQUENCE_TERMINATED, task 1, sequence 1, after node 7, job 1, at cycle: 155049.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 4, node 6, job 1, at cycle: 159245.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 4, node 7, job 1, at cycle: 159249.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 4, node 7, job 1, at cycle: 168943.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NEW_JOB_RELEASED, task 1, job 2, at cycle: 244919.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 1, node 1, job 2, at cycle: 245129.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 1, node 1, job 2, at cycle: 252437.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 1, node 2, job 2, at cycle: 252448.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 2, node 3, job 2, at cycle: 252462.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 3, node 4, job 2, at cycle: 252466.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 2, node 3, job 2, at cycle: 259240.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: SEQUENCE_TERMINATED, task 1, sequence 2, after node 5, job 2, at cycle: 259243.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 3, node 4, job 2, at cycle: 262615.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: SEQUENCE_TERMINATED, task 1, sequence 3, after node 5, job 2, at cycle: 262618.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 1, node 2, job 2, at cycle: 262866.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 1, node 5, job 2, at cycle: 262874.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 4, node 6, job 2, at cycle: 262900.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 1, node 5, job 2, at cycle: 269896.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: SEQUENCE_TERMINATED, task 1, sequence 1, after node 7, job 2, at cycle: 269899.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 4, node 6, job 2, at cycle: 272998.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 4, node 7, job 2, at cycle: 273000.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 4, node 7, job 2, at cycle: 280023.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NEW_JOB_RELEASED, task 1, job 3, at cycle: 364875.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 1, node 1, job 3, at cycle: 364956.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 1, node 1, job 3, at cycle: 371467.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 1, node 2, job 3, at cycle: 371478.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 2, node 3, job 3, at cycle: 371493.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 3, node 4, job 3, at cycle: 371498.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 2, node 3, job 3, at cycle: 378273.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: SEQUENCE_TERMINATED, task 1, sequence 2, after node 5, job 3, at cycle: 378276.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 3, node 4, job 3, at cycle: 381658.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: SEQUENCE_TERMINATED, task 1, sequence 3, after node 5, job 3, at cycle: 381660.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 1, node 2, job 3, at cycle: 381704.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 1, node 5, job 3, at cycle: 381711.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 4, node 6, job 3, at cycle: 381731.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 1, node 5, job 3, at cycle: 388527.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: SEQUENCE_TERMINATED, task 1, sequence 1, after node 7, job 3, at cycle: 388529.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 4, node 6, job 3, at cycle: 391819.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 4, node 7, job 3, at cycle: 391822.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 4, node 7, job 3, at cycle: 398654.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NEW_JOB_RELEASED, task 1, job 4, at cycle: 474872.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 1, node 1, job 4, at cycle: 474947.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 1, node 1, job 4, at cycle: 481916.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 1, node 2, job 4, at cycle: 481927.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 3, node 4, job 4, at cycle: 481953.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 2, node 3, job 4, at cycle: 481955.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 2, node 3, job 4, at cycle: 488731.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: SEQUENCE_TERMINATED, task 1, sequence 2, after node 5, job 4, at cycle: 488733.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 1, node 2, job 4, at cycle: 492167.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: SEQUENCE_TERMINATED, task 1, sequence 1, after node 5, job 4, at cycle: 492170.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 3, node 4, job 4, at cycle: 492744.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 3, node 5, job 4, at cycle: 492752.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 4, node 6, job 4, at cycle: 492776.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 3, node 5, job 4, at cycle: 499571.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: SEQUENCE_TERMINATED, task 1, sequence 3, after node 7, job 4, at cycle: 499573.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 4, node 6, job 4, at cycle: 502848.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 4, node 7, job 4, at cycle: 502850.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 4, node 7, job 4, at cycle: 509707.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NEW_JOB_RELEASED, task 1, job 5, at cycle: 584873.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 1, node 1, job 5, at cycle: 584950.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 1, node 1, job 5, at cycle: 591925.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 1, node 2, job 5, at cycle: 591936.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 2, node 3, job 5, at cycle: 591953.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 3, node 4, job 5, at cycle: 591956.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 2, node 3, job 5, at cycle: 598936.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: SEQUENCE_TERMINATED, task 1, sequence 2, after node 5, job 5, at cycle: 598938.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 1, node 2, job 5, at cycle: 602262.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: SEQUENCE_TERMINATED, task 1, sequence 1, after node 5, job 5, at cycle: 602264.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 3, node 4, job 5, at cycle: 602501.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 3, node 5, job 5, at cycle: 602511.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 4, node 6, job 5, at cycle: 602533.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 3, node 5, job 5, at cycle: 609332.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: SEQUENCE_TERMINATED, task 1, sequence 3, after node 7, job 5, at cycle: 609334.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 4, node 6, job 5, at cycle: 612935.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_STARTED, task 1, sequence 4, node 7, job 5, at cycle: 612937.000000
+Aug 28 20:35:42 raspberrypi RBS_IMPLEMENTATION_LOG[3789]: NODE_EXECUTION_FINISHED, task 1, sequence 4, node 7, job 5, at cycle: 619911.000000
+
