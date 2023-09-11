@@ -1,4 +1,22 @@
 import json
+import numpy as np
+
+task_set = []
+
+class RBS_task:
+    def __init__(self, id, P, CPU, A, C, T, D, S, number_of_nodes, number_of_sequences):
+        self.id = id
+        self.priority = P
+        self.adj = A
+        self.ex_times = C
+        self.period = T
+        self.deadline = D
+        self.sequences = S
+        self.cpu = CPU
+        self.number_of_nodes = number_of_nodes
+        self.number_of_sequences = number_of_sequences
+        self.nodesWCET = []
+        self.nodesET = []
 
 #task settings
 task_num = 0
@@ -47,55 +65,74 @@ class RBS_event:
         self.duration = 0
         self.cpu = 0
 
+def get_priority(t_id):
+    for task in task_set:
+        if (task.id == t_id):
+            return task.priority
+
+def list_to_integer(list):
+    #list.reverse()
+    value = 0
+    for index in range(len(list)):
+        if list[index] == 0:
+            continue
+        else:
+            value = value + pow(2, index)
+    return(value)
+
+def compute_adj_matrix(A, number_of_nodes):
+
+    #define matrix size
+    adj_matrix = [[0 for i in range(number_of_nodes)] for i in range(number_of_nodes)]
+
+    for element in A:
+        row_ind = element[1] - 1
+        col_ind = element[0] - 1
+        adj_matrix [row_ind][col_ind] = 1    
+
+    return adj_matrix
+
+def import_taskset():
+    f = open('taskset2.json', "r")
+    data = json.load(f)
+    
+    #Parse tasks from JSON file
+    for task in data['taskset']:
+        id = task['id']
+        E = list(task['E'])
+        C = list(task['C'])
+        T = int(task['T'])
+        D = int(task['T'])
+        S = list(task['SEQ'])
+        P = task['P']
+        CPU = list(task['AFF'])
+
+        #Compute the number of nodes
+        number_of_nodes = 0
+        for element in E:
+            for index in range(2):
+                if element[index] > number_of_nodes:
+                    number_of_nodes = element[index]
+
+        #Compute the number of sequences
+        number_of_sequences = len(S)
+        
+        #Add task to taskset list
+        imported_task = RBS_task(id, P, CPU, compute_adj_matrix(E, number_of_nodes), C, T, D, S, number_of_nodes, number_of_sequences)
+        task_set.append(imported_task)
+
+    f.close()
+
 def import_settings():
+    import_taskset()
     global task_num
 
-    with open("tasks_settings.txt", "r") as tasks_settings:
+    task_num = len(task_set)
 
-        #import number of tasks
-        for line in tasks_settings:
-            line_string = str(line)
-
-            result = line_string.find("number_of_tasks")
-            if result != (-1):
-                task_num = obtain_value(line_string,'number_of_tasks', 17,',')
-                break           
-
-        #import number of nodes
-        for i in range(1, task_num+1):
-            string_to_search = "number_of_nodesT" + str(i)
-            for line in tasks_settings:
-                line_string = str(line)
-                result = line_string.find(string_to_search)
-                if result != (-1):
-                    nodes_number  = obtain_value(line_string,string_to_search, 19,',')
-                    number_of_nodes.append(nodes_number)
-                    break
-
-        #import number of sequences
-        for i in range(1, task_num+1):
-            string_to_search = "number_of_sequencesT" + str(i)
-            for line in tasks_settings:
-                line_string = str(line)
-                result = line_string.find(string_to_search)
-                if result != (-1):
-                    sequences_number  = obtain_value(line_string,string_to_search, 23,',')
-                    number_of_sequences.append(sequences_number)
-                    break
-
-        #import cpu assignments
-        for i in range(1, task_num+1):
-            assignemnts_cpu = []
-            for x in range(1, (number_of_sequences[i-1]+1)):
-                string_to_search = "cpu_assignmentT" + str(i) + "_S" + str(x)
-                for line in tasks_settings:
-                    line_string = str(line)
-                    result = line_string.find(string_to_search)
-                    if result != (-1):
-                        assignemnts_cpu.append(obtain_value(line_string,string_to_search, 22,',')) 
-                        break
-           
-            cpu_assignment.append(assignemnts_cpu)
+    for task in task_set:
+        number_of_nodes.append(task.number_of_nodes)
+        number_of_sequences.append(task.number_of_sequences)
+        cpu_assignment.append(task.cpu) 
 
 
 def generate_trace():
@@ -170,25 +207,34 @@ def solve_preemptions():
     global task_num
 
     for element in event_list:
-        if element.task == 1 or element.type != 1:
-            continue
-        else:
-            for element2 in event_list:
-                if element2.task < element.task:
-                    if element.cpu == element2.cpu:
-                        if (element2.start > element.start and element2.end < element.end and element2.end < element.end):
-
+        for element2 in event_list:
+            if element.cpu == element2.cpu:
+                if (element2.start > element.start and element2.end < element.end):
+                    el1_prio = get_priority(element.task)
+                    el2_prio = get_priority(element2.task)
+                    if el2_prio > el1_prio:
+                    #if element2.task < element.task:
                             new_event = RBS_event(1, element.task, element.sequence, element.node, element.job, element2.end)
                             new_event.end = element.end
                             new_event.cpu = element.cpu
-
                             element.end = element2.start
-
                             event_list.append(new_event)
+
+
+    #Remove parts of a low priority job between 2 higher priority jobs (side effect of preemption solving)
+    for event in event_list:
+        for event2 in event_list:
+            if event.task != event2.task and event2.end == event.start and get_priority(event.task) < get_priority(event2.task):
+                for event3 in event_list:
+                    if (event3.task != event2.task):
+                        continue
+                    if(event2.job != event3.job):
+                        continue
+                    if event.end == event3.start:
+                        event_list.remove(event)
 
 def transformEventsToExecutions():
     global task_num
-    counter = 0
     for event in event_list:
         if event.type != 1:
             continue
@@ -265,7 +311,25 @@ def compute_ART():
         ART_list[i] = round(ART_list[i] / ART_counter_list[i])
 
 def compute_WCET():
-    return
+    for task in task_set:
+        for node_nr in range(1, task.number_of_nodes+1):
+            node_wcet = 0
+            for ex in executions_list:
+                if ex.task == task.id and ex.node == node_nr:
+                    if ex.executionTime > node_wcet:
+                        node_wcet = ex.executionTime
+
+            task.nodesWCET.append(node_wcet)
+
+def compute_ETs():
+    for task in task_set:
+        for node_nr in range(1, task.number_of_nodes+1):
+            node_ETs = []
+            for ex in executions_list:
+                if ex.task == task.id and ex.node == node_nr:
+                    node_ETs.append(ex.executionTime)
+            task.nodesET.append(node_ETs)
+
 
 def add_cpu():
     for event in event_list:
@@ -364,7 +428,27 @@ def read_and_convert_log():
                 event_list.append(event)
 
                 continue
-        
+
+def print_info():
+    with open("ex_times.txt", "w") as log:
+        string = "\nWCRTs: " +  str(WCRT_list)
+        log.write(string)
+        string = "\nBCRTs: " +  str(BCRT_list)
+        log.write(string)
+        string = "\nARTs: " +  str(ART_list)
+        log.write(string)
+
+        for task in task_set:
+            string = "WCETs task" + str(task.id) + ":" + str(task.nodesWCET)
+
+        for task in task_set:
+            for node_nr in range(0, task.number_of_nodes):
+                log.write("\n")
+                string = "task: " + str(task.id) + " node: " + str(node_nr+1) + "\n"
+                log.write(string)
+                for element in task.nodesET[node_nr]:
+                    string = str(element) + "\n"
+                    log.write(string)   
 
 def main():
 
@@ -380,16 +464,12 @@ def main():
     compute_WCRT()
     compute_BCRT()
     compute_ART()
-    print("WCRTs: ", WCRT_list)
-    print("BCRTs: ", BCRT_list)
-    print("ARTs: ", ART_list)
+    compute_WCET()
+    compute_ETs()
 
-    #for element in executions_list:
-        #print("task =", element.task,"node = ", element.node, "sequence = ", element.sequence,"job = ", element.job,"start =", element.start)
+    print_info()
+
 
     
-
-
-
 if __name__ == "__main__":
     main()
