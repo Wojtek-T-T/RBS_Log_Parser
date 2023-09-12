@@ -107,6 +107,8 @@ def import_taskset():
         P = task['P']
         CPU = list(task['AFF'])
 
+        P = 99 - P
+
         #Compute the number of nodes
         number_of_nodes = 0
         for element in E:
