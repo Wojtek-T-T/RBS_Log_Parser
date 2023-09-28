@@ -1,11 +1,11 @@
 import json
+from re import I
 import numpy as np
 
-time_unit_length = 36
-
-task_to_parse = 1
-
+time_unit_length = 41
 task_set = []
+event_list = []
+executions_list = []
 
 class RBS_task:
     def __init__(self, id, P, CPU, A, C, T, D, S, number_of_nodes, number_of_sequences, WCRT):
@@ -22,29 +22,11 @@ class RBS_task:
         self.nodesWCET = []
         self.nodesET = []
         self.WCRT_analysis = WCRT
+        self.RTs_experiment = []
+        self.WCRT_experiment = 0
+        self.ART_experiment = 0
+        self.BCRT_experiment = 0
 
-#task settings
-task_num = 0
-number_of_nodes = []
-number_of_sequences = []
-cpu_assignment = []
-priorities = []
-
-#set offsets
-task_offset = 5
-sequence_offset = 9
-node_ofset = 5
-job_offset = 4
-time_offset = 7
-###################################
-
-Deadline_min_WCRT = []
-WCRT_list = []
-BCRT_list = []
-ART_list = []
-ART_counter_list = []
-event_list = []
-executions_list = []
 
 class RBS_execution:
     def __init__(self, task, sequence, node, job, start, end, executionTime):
@@ -60,14 +42,14 @@ class RBS_execution:
 
 
 class RBS_event:
-    def __init__(self, type, task, sequence, node, job, start, part):
+    def __init__(self, type, task, sequence, node, job, start, end, part):
         self.type = type
         self.task = task
         self.sequence = sequence
         self.node = node
         self.job = job
         self.start = start
-        self.end = 0
+        self.end = end
         self.duration = 0
         self.cpu = 0
         self.part_of_execution = part
@@ -100,7 +82,7 @@ def compute_adj_matrix(A, number_of_nodes):
 
     return adj_matrix
 
-def import_taskset():
+def import_taskset(task_to_parse):
     string = "taskset" + str(task_to_parse) + ".json"
     f = open(string, "r")
     data = json.load(f)
@@ -136,20 +118,7 @@ def import_taskset():
 
     f.close()
 
-def import_settings():
-    import_taskset()
-    global task_num
-
-    task_num = len(task_set)
-
-    #copy data from task structures to globals
-    for task in task_set:
-        number_of_nodes.append(task.number_of_nodes)
-        number_of_sequences.append(task.number_of_sequences)
-        cpu_assignment.append(task.cpu) 
-
-
-def generate_trace():
+def generate_trace(task_to_parse):
     global event_list
     string = "trace" + str(task_to_parse) + ".json"
     with open(string, "w") as outfile: 
@@ -211,8 +180,29 @@ def generate_trace():
                     "s": "g"
                 }
 
+                # dictionary = {
+                #         "pid": element.cpu,
+                #         "tid": element.cpu,
+                #         "ts": element.start,
+                #         "dur": (element.end - element.start),
+                #         "ph": "X",
+                #         "name": name_string
+                #         }               
+
                 dictionaries.append(dictionary)
 
+            elif element.type == 5:
+                name_string = "AUT SIGNAL AFTER: TASK " + str(element.task) + ", NODE " + str(element.node) + ", JOB " + str(element.job) + ", ex_prt " + str(element.part_of_execution)
+                dictionary = {
+                        "pid": element.cpu,
+                        "tid": element.cpu,
+                        "ts": element.start,
+                        "dur": (element.end - element.start),
+                        "ph": "X",
+                        "name": name_string
+                        }               
+
+                dictionaries.append(dictionary)
             else:
                 continue
 
@@ -232,8 +222,7 @@ def solve_preemptions():
                     el2_prio = get_priority(element2.task)
                     if el2_prio > el1_prio:
                     #if element2.task < element.task:
-                            new_event = RBS_event(1, element.task, element.sequence, element.node, element.job, element2.end, (element.part_of_execution + 1))
-                            new_event.end = element.end
+                            new_event = RBS_event(1, element.task, element.sequence, element.node, element.job, element2.end, element.end, (element.part_of_execution + 1))
                             new_event.cpu = element.cpu
                             element.end = element2.start
                             event_list.append(new_event)
@@ -264,7 +253,6 @@ def solve_preemptions():
             
 
 def transformEventsToExecutions():
-    global task_num
     global event_list
     for event in event_list:
         if event.type != 1:
@@ -290,60 +278,32 @@ def transformEventsToExecutions():
         executions_list.append(new_execution)
     return
 
-def compute_WCRT():
-    #initialize WCRT list
-    global task_num
-    for i in range(task_num):
-        WCRT_list.append(0) 
 
+def compute_RTs():
     for event in event_list:
         if event.type == 2:
             for execution in executions_list:
-                if execution.task == event.task and execution.job == event.job and execution.node == number_of_nodes[(execution.task-1)]:
+                if execution.task == event.task and execution.job == event.job and execution.node == task_set[event.task-1].number_of_nodes:
                     wc_response_t = (execution.end - event.start)/time_unit_length
-                    if wc_response_t > WCRT_list[(execution.task-1)]:
-                        WCRT_list[(execution.task-1)] = wc_response_t
+                    task_set[event.task-1].RTs_experiment.append(wc_response_t)
 
-
+def compute_WCRT():   
+    for task in task_set:
+        task.RTs_experiment.sort()
+        task.RTs_experiment.reverse()
+        one_p = len(task.RTs_experiment) / 100
+        for index in range(0, int(one_p)):
+            task.RTs_experiment.pop(index)
+        task.WCRT_experiment = max(task.RTs_experiment)
 
 
 def compute_BCRT():
-
-    #initialize BCRT list
-    global task_num
-    for i in range(task_num):
-        BCRT_list.append(0) 
-
-    for event in event_list:
-        if event.type == 2:
-            for execution in executions_list:
-                if execution.task == event.task and execution.job == event.job and execution.node == number_of_nodes[(execution.task-1)]:
-                    bc_response_t = ((execution.end - event.start)/time_unit_length)
-
-                    if BCRT_list[(execution.task-1)] == 0:
-                        BCRT_list[(execution.task-1)] = bc_response_t
-                    else:
-                        if bc_response_t < BCRT_list[(execution.task-1)]:
-                            BCRT_list[(execution.task-1)] = bc_response_t
+    for task in task_set:
+        task.BCRT_experiment = min(task.RTs_experiment)
 
 def compute_ART():
-
-    #initialize ART list
-    global task_num
-    for i in range(task_num):
-        ART_list.append(0)
-        ART_counter_list.append(0) 
-
-    for event in event_list:
-        if event.type == 2:
-            for execution in executions_list:
-                if execution.task == event.task and execution.job == event.job and execution.node == number_of_nodes[(execution.task-1)]:
-                    response_t = execution.end - event.start
-                    ART_list[(execution.task-1)] = ART_list[(execution.task-1)] + (response_t/time_unit_length)
-                    ART_counter_list[(execution.task-1)] = ART_counter_list[(execution.task-1)] + 1
-
-    for i in range(task_num):
-        ART_list[i] = round(ART_list[i] / ART_counter_list[i])
+    for task in task_set:
+        task.ART_experiment = sum(task.RTs_experiment) / len(task.RTs_experiment)
 
 def compute_WCET():
     for task in task_set:
@@ -368,12 +328,12 @@ def compute_ETs():
 
 
 def add_cpu():
-
     for event in event_list:
-        task_index = event.task -1
-        sequence_index = event.sequence -1
-        cpu = cpu_assignment[task_index][ sequence_index]
-        event.cpu = cpu
+        if event.type != 2:
+            task_index = event.task -1
+            sequence_index = event.sequence -1
+            cpu = task_set[task_index].cpu[sequence_index]
+            event.cpu = cpu
 
 def compute_duration():
     for event in event_list:
@@ -397,88 +357,50 @@ def obtain_value(line_string, value_type, offset, end_mark):
 
     return int(return_value)
 
-def read_and_convert_log():
-    global event_list
 
-    string = "log" + str(task_to_parse) + ".txt"
-    with open(string, "r") as log:
-        for line in log:
-            line_string = str(line)
-            result = line_string.find("NODE_EXECUTION_STARTED")
-            if result != (-1):
+def read_and_convert_log_json(task_to_parse):
 
-                #find task number
-                task = obtain_value(line_string,'task',task_offset,',')
+    string = "log" + str(task_to_parse) + ".json"
+    f = open(string, "r")
+    log_file = json.load(f)
 
-                #find sequence number
-                sequence = obtain_value(line_string,'sequence',sequence_offset,',')
+    #Parse tasks from JSON file
+    for log_event in log_file['log']:
+        event_type = log_event['type']
+        task = log_event['task']
+        sequence = log_event['sequence']
+        node = log_event['node']
+        job = log_event['job']
+        start = int(log_event['start'])
+        end = int(log_event['end'])
 
-                #find node number
-                node = obtain_value(line_string,'node',node_ofset,',')
-
-                #find job number
-                job = obtain_value(line_string,'job',job_offset,',')
-
-                #find start time
-                start = obtain_value(line_string,'cycle', time_offset,'.')
-
-                #create event
-                event = RBS_event(1, task, sequence, node, job, start, 1)
-                event_list.append(event)
-
-                continue
-
-            result = line_string.find("NODE_EXECUTION_FINISHED")
-            if result != (-1):
-
-                #find task number
-                task = obtain_value(line_string,'task', task_offset,',')
-
-                #find sequence number
-                sequence = obtain_value(line_string,'sequence', sequence_offset,',')
-
-                #find node number
-                node = obtain_value(line_string,'node', node_ofset,',')
-
-                #find job number
-                job = obtain_value(line_string,'job', job_offset,',')
-
-                #find end time
-                end = obtain_value(line_string,'cycle', time_offset,'.')
-
-                for element in event_list:
-                    if (element.task == task and element.sequence == sequence and element.node == node and element.job == job):
-                        element.end = end
-                continue
-
-            result = line_string.find("NEW_JOB_RELEASED")
-            if result != (-1):
-
-                #find task number
-                task = obtain_value(line_string,'task',task_offset,',')
-
-                #find job number
-                job = obtain_value(line_string,'job',job_offset,',')
-
-                #find start time
-                start = obtain_value(line_string,'cycle', time_offset,'.')
-
-                #create event
-                event = RBS_event(2, task, 0, 0, job, start, 1)
-                event_list.append(event)
-
-                continue
+        event = RBS_event(event_type, task, sequence, node, job, start, end, 1)
+        event_list.append(event)
+        
     add_cpu()
 
-def print_info():
+def print_info(task_to_parse):
     string = "experiment_outcome" + str(task_to_parse) + ".txt"
     with open(string, "w") as log:
-        string = "\nWCRTs: " +  str(WCRT_list)
+
+        string = "\nWCRTs: \n"
         log.write(string)
-        string = "\nBCRTs: " +  str(BCRT_list)
+        for task in task_set:
+            string = str(round(task.WCRT_experiment)) + "\n" 
+            log.write(string)
+
+        string = "\nBCRTs: \n"
         log.write(string)
-        string = "\nARTs: " +  str(ART_list)
+        for task in task_set:
+            string = str(round(task.BCRT_experiment)) + "\n" 
+            log.write(string)
+
+        string = "\nARTs: \n"
         log.write(string)
+        for task in task_set:
+            string = str(round(task.ART_experiment)) + "\n" 
+            log.write(string)
+
 
         analyzed_WCRT = []
         deadlines = []
@@ -491,8 +413,6 @@ def print_info():
 
         string = "\ndeadline: " +  str(deadlines)
         log.write(string)
-
-        
 
 
         for task in task_set:
@@ -509,34 +429,38 @@ def print_info():
 
 def compute_statistics():
     transformEventsToExecutions()
+    compute_RTs()
     compute_WCRT()
     compute_BCRT()
     compute_ART()
     compute_WCET()
     compute_ETs()
 
-def main():
-
+def complete_action(task_nr):
     print("importing tasks data...")
-    import_settings()
-
+    import_taskset(task_nr)
     print("reading and converting log file...")
-    read_and_convert_log()
-
+    read_and_convert_log_json(task_nr)
     print("solving preemptions conflicts...")
     solve_preemptions()
-
     print("computing durations...")
     compute_duration()
-
     print("generating trace...")
-    generate_trace()
-    
+    generate_trace(task_nr)
     print("Computing statistics...")
     compute_statistics()
-
     print("printing statistics to file...")
-    print_info()
+    print_info(task_nr)
+
+def main():
+    for task_nr in range(1,106):
+        print("STARING WITH TASK ", task_nr)
+        complete_action(task_nr)
+        task_set.clear()
+        event_list.clear()
+        executions_list.clear()
+
+
 
 
 if __name__ == "__main__":
