@@ -3,6 +3,7 @@ from re import I
 import numpy as np
 
 time_unit_length = 41
+max_job = 300
 task_set = []
 event_list = []
 executions_list = []
@@ -229,24 +230,24 @@ def solve_preemptions():
 
 
 
-    #Remove parts of a low priority job between 2 higher priority jobs (side effect of preemption solving)
-    for event in event_list:
-        if event.type != 1:
-            continue
-        for event2 in event_list:
-            if event2.type != 1:
-                continue
-            if event.task != event2.task and event2.end == event.start and get_priority(event.task) < get_priority(event2.task):
-                for event3 in event_list:
-                    if event3.type != 1:
-                        continue
-                    if (event3.task != event2.task):
-                        continue
-                    if(event2.job != event3.job):
-                        continue
-                    if event.end == event3.start:
-                        #event_list.remove(event)
-                        event.discard_flag = 1
+    # #Remove parts of a low priority job between 2 higher priority jobs (side effect of preemption solving)
+    # for event in event_list:
+    #     if event.type != 1:
+    #         continue
+    #     for event2 in event_list:
+    #         if event2.type != 1:
+    #             continue
+    #         if event.task != event2.task and event2.end == event.start and get_priority(event.task) < get_priority(event2.task):
+    #             for event3 in event_list:
+    #                 if event3.type != 1:
+    #                     continue
+    #                 if (event3.task != event2.task):
+    #                     continue
+    #                 if(event2.job != event3.job):
+    #                     continue
+    #                 if event.end == event3.start:
+    #                     #event_list.remove(event)
+    #                     event.discard_flag = 1
 
 
 
@@ -287,14 +288,25 @@ def compute_RTs():
                     wc_response_t = (execution.end - event.start)/time_unit_length
                     task_set[event.task-1].RTs_experiment.append(wc_response_t)
 
+def compute_RTs_short():
+    for event in event_list:
+        if event.type == 2:
+            for event2 in event_list:
+                if event2.type == 1:
+                    if event2.task == event.task and event2.job == event.job and event2.node == task_set[event.task-1].number_of_nodes:
+                        wc_response_t = (event2.end - event.start)/time_unit_length
+                        task_set[event.task-1].RTs_experiment.append(wc_response_t)  
+
 def compute_WCRT():   
     for task in task_set:
-        task.RTs_experiment.sort()
-        task.RTs_experiment.reverse()
-        one_p = len(task.RTs_experiment) / 100
-        for index in range(0, int(one_p)):
+        #task.RTs_experiment.sort()
+        #task.RTs_experiment.reverse()
+        #one_p = len(task.RTs_experiment) / 100
+        #one_p = 1
+        for index in range(0, 3):
             task.RTs_experiment.pop(index)
         task.WCRT_experiment = max(task.RTs_experiment)
+
 
 
 def compute_BCRT():
@@ -359,7 +371,7 @@ def obtain_value(line_string, value_type, offset, end_mark):
 
 
 def read_and_convert_log_json(task_to_parse):
-
+    temp_list = []
     string = "log" + str(task_to_parse) + ".json"
     f = open(string, "r")
     log_file = json.load(f)
@@ -374,25 +386,59 @@ def read_and_convert_log_json(task_to_parse):
         start = int(log_event['start'])
         end = int(log_event['end'])
 
+        #if event_type == 1 or event_type == 2:
         event = RBS_event(event_type, task, sequence, node, job, start, end, 1)
-        event_list.append(event)
-        
+        temp_list.append(event)
+
+    #determine the time of the last release of the lowest period task
+    task_lowest_period = 9999999
+    task_lowest_period_id = 0
+    for task in task_set:
+        if task.period < task_lowest_period:
+            task_lowest_period = task.period
+            task_lowest_period_id = task.id
+
+    latest_release = 0
+    for event in temp_list:
+        if event.type == 1 and event.task == task_lowest_period_id and event.job == max_job and event.node == task_set[task_lowest_period_id-1].number_of_nodes:
+            latest_release = event.start
+
+    if latest_release == 0:
+        print("hallo")
+        for event in temp_list:
+            if event.type == 1 and event.task == task_lowest_period_id and event.job == 20 and event.node == task_set[task_lowest_period_id-1].number_of_nodes:
+                latest_release = event.start
+
+    for event in temp_list:
+        if event.start < latest_release:
+            event_list.append(event)
+
+
+ 
     add_cpu()
 
 def print_info(task_to_parse):
     string = "experiment_outcome" + str(task_to_parse) + ".txt"
     with open(string, "w") as log:
 
+        string = "\nAnalyzed WCRTs: \n"
+        log.write(string)
+        deadlines = []
+        for task in task_set:
+            string = str(round(task.WCRT_analysis)) + "\n" 
+            log.write(string)
+            deadlines.append(task.deadline)
+
+        string = "\nPriorities: \n"
+        log.write(string)
+        for task in task_set:
+            string = str(round(task.priority)) + "\n" 
+            log.write(string)
+
         string = "\nWCRTs: \n"
         log.write(string)
         for task in task_set:
             string = str(round(task.WCRT_experiment)) + "\n" 
-            log.write(string)
-
-        string = "\nBCRTs: \n"
-        log.write(string)
-        for task in task_set:
-            string = str(round(task.BCRT_experiment)) + "\n" 
             log.write(string)
 
         string = "\nARTs: \n"
@@ -401,22 +447,14 @@ def print_info(task_to_parse):
             string = str(round(task.ART_experiment)) + "\n" 
             log.write(string)
 
-
-        analyzed_WCRT = []
-        deadlines = []
-        for task in task_set:
-            analyzed_WCRT.append(task.WCRT_analysis)
-            deadlines.append(task.deadline)
-
-        string = "\nAnalyzed WCRT: " +  str(analyzed_WCRT)
+        string = "\nBCRTs: \n"
         log.write(string)
-
-        string = "\ndeadline: " +  str(deadlines)
-        log.write(string)
-
-
         for task in task_set:
-            string = "WCETs task" + str(task.id) + ":" + str(task.nodesWCET)
+            string = str(round(task.BCRT_experiment)) + "\n" 
+            log.write(string)
+
+        string = "\ndeadlines: " +  str(deadlines)
+        log.write(string)
 
         for task in task_set:
             for node_nr in range(0, task.number_of_nodes):
@@ -425,7 +463,64 @@ def print_info(task_to_parse):
                 log.write(string)
                 for element in task.nodesET[node_nr]:
                     string = str(element) + "\n"
-                    log.write(string)   
+                    log.write(string) 
+
+        for task in task_set:
+            log.write("\n\n")
+            string = "RTs task" + str(task.id) + ":"
+            log.write(string)
+            for element in task.RTs_experiment:
+                string = str(round(element,2)) + "\n"
+                log.write(string)
+
+def print_info_short(task_to_parse):   
+    string = "experiment_outcome" + str(task_to_parse) + "_short.txt"
+    with open(string, "w") as log:
+
+        string = "\nWCRTs: \n"
+        log.write(string)
+        for task in task_set:
+            string = str(round(task.WCRT_experiment)) + "\n" 
+            log.write(string)
+
+        string = "\nARTs: \n"
+        log.write(string)
+        for task in task_set:
+            string = str(round(task.ART_experiment)) + "\n" 
+            log.write(string)
+
+        string = "\nBCRTs: \n"
+        log.write(string)
+        for task in task_set:
+            string = str(round(task.BCRT_experiment)) + "\n" 
+            log.write(string)
+
+        string = "\nPriorities: \n"
+        log.write(string)
+        for task in task_set:
+            string = str(round(task.priority)) + "\n" 
+            log.write(string)
+
+        string = "\nAnalyzed WCRTs: \n"
+        log.write(string)
+        deadlines = []
+        for task in task_set:
+            string = str(round(task.WCRT_analysis)) + "\n" 
+            log.write(string)
+            deadlines.append(task.deadline)
+
+
+        string = "\ndeadline: " +  str(deadlines)
+        log.write(string)
+
+        for task in task_set:
+            log.write("\n\n")
+            string = "RTs task" + str(task.id) + ":\n"
+            log.write(string)
+            for element in task.RTs_experiment:
+                string = str(round(element,2)) + "\n"
+                log.write(string)
+    
 
 def compute_statistics():
     transformEventsToExecutions()
@@ -435,6 +530,13 @@ def compute_statistics():
     compute_ART()
     compute_WCET()
     compute_ETs()
+
+def compute_statistics_short():
+    compute_RTs_short()
+    compute_WCRT()
+    compute_BCRT()
+    compute_ART()
+
 
 def complete_action(task_nr):
     print("importing tasks data...")
@@ -452,8 +554,18 @@ def complete_action(task_nr):
     print("printing statistics to file...")
     print_info(task_nr)
 
+def short_action(task_nr):
+    print("importing tasks data...")
+    import_taskset(task_nr)
+    print("reading and converting log file...")
+    read_and_convert_log_json(task_nr)
+    print("Computing statistics...")
+    compute_statistics_short()
+    print("printing statistics to file...")
+    print_info_short(task_nr)
+
 def main():
-    for task_nr in range(1,106):
+    for task_nr in range(44,106):
         print("STARING WITH TASK ", task_nr)
         complete_action(task_nr)
         task_set.clear()
