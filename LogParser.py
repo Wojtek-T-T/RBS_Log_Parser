@@ -2,6 +2,11 @@ import json
 from re import I
 import numpy as np
 
+import openpyxl
+from openpyxl import Workbook
+import multiprocessing
+
+
 time_unit_length = 41
 max_job = 300
 task_set = []
@@ -209,45 +214,45 @@ def generate_trace(task_to_parse):
 
         json.dump(dictionaries, outfile)
         
-def solve_preemptions():
+def solve_preemptions(cpu_to_handle):
     global event_list
     for element in event_list:
-        if element.type != 1:
+        if element.type != 1 or element.cpu != cpu_to_handle:
             continue
         for element2 in event_list:
-            if element2.type != 1:
+            if element2.type != 1 or element2.cpu != cpu_to_handle:
                 continue
-            if element.cpu == element2.cpu:
-                if (element2.start > element.start and element2.end < element.end):
-                    el1_prio = get_priority(element.task)
-                    el2_prio = get_priority(element2.task)
-                    if el2_prio > el1_prio:
-                    #if element2.task < element.task:
-                            new_event = RBS_event(1, element.task, element.sequence, element.node, element.job, element2.end, element.end, (element.part_of_execution + 1))
-                            new_event.cpu = element.cpu
-                            element.end = element2.start
-                            event_list.append(new_event)
+            if (element2.start > element.start and element2.end < element.end):
+                el1_prio = get_priority(element.task)
+                el2_prio = get_priority(element2.task)
+                if el2_prio > el1_prio:
+                #if element2.task < element.task:
+                        new_event = RBS_event(1, element.task, element.sequence, element.node, element.job, element2.end, element.end, (element.part_of_execution + 1))
+                        new_event.cpu = element.cpu
+                        element.end = element2.start
+                        event_list.append(new_event)
 
 
 
-    # #Remove parts of a low priority job between 2 higher priority jobs (side effect of preemption solving)
-    # for event in event_list:
-    #     if event.type != 1:
-    #         continue
-    #     for event2 in event_list:
-    #         if event2.type != 1:
-    #             continue
-    #         if event.task != event2.task and event2.end == event.start and get_priority(event.task) < get_priority(event2.task):
-    #             for event3 in event_list:
-    #                 if event3.type != 1:
-    #                     continue
-    #                 if (event3.task != event2.task):
-    #                     continue
-    #                 if(event2.job != event3.job):
-    #                     continue
-    #                 if event.end == event3.start:
-    #                     #event_list.remove(event)
-    #                     event.discard_flag = 1
+def discard_foulty_events(cpu_to_handle):
+    #Remove parts of a low priority job between 2 higher priority jobs (side effect of preemption solving)
+    for event in event_list:
+        if event.type != 1 or event.cpu != cpu_to_handle:
+            continue
+        for event2 in event_list:
+            if event2.type != 1 or event2.cpu != cpu_to_handle:
+                continue
+            if event.task != event2.task and event2.end == event.start and get_priority(event.task) < get_priority(event2.task):
+                for event3 in event_list:
+                    if event3.type != 1:
+                        continue
+                    if (event3.task != event2.task):
+                        continue
+                    if(event2.job != event3.job):
+                        continue
+                    if event.end == event3.start:
+                        #event_list.remove(event)
+                        event.discard_flag = 1
 
 
 
@@ -388,30 +393,24 @@ def read_and_convert_log_json(task_to_parse):
 
         #if event_type == 1 or event_type == 2:
         event = RBS_event(event_type, task, sequence, node, job, start, end, 1)
-        temp_list.append(event)
+        event_list.append(event)
 
-    #determine the time of the last release of the lowest period task
-    task_lowest_period = 9999999
-    task_lowest_period_id = 0
-    for task in task_set:
-        if task.period < task_lowest_period:
-            task_lowest_period = task.period
-            task_lowest_period_id = task.id
+    # #determine the time of the last release of the lowest period task
+    # task_lowest_period = 9999999
+    # task_lowest_period_id = 0
+    # for task in task_set:
+    #     if task.period < task_lowest_period:
+    #         task_lowest_period = task.period
+    #         task_lowest_period_id = task.id
 
-    latest_release = 0
-    for event in temp_list:
-        if event.type == 1 and event.task == task_lowest_period_id and event.job == max_job and event.node == task_set[task_lowest_period_id-1].number_of_nodes:
-            latest_release = event.start
+    # latest_release = 0
+    # for event in temp_list:
+    #     if event.type == 1 and event.task == task_lowest_period_id and event.job == max_job and event.node == task_set[task_lowest_period_id-1].number_of_nodes:
+    #         latest_release = event.start
 
-    if latest_release == 0:
-        print("hallo")
-        for event in temp_list:
-            if event.type == 1 and event.task == task_lowest_period_id and event.job == 20 and event.node == task_set[task_lowest_period_id-1].number_of_nodes:
-                latest_release = event.start
-
-    for event in temp_list:
-        if event.start < latest_release:
-            event_list.append(event)
+    # for event in temp_list:
+    #     if event.start < latest_release:
+    #         event_list.append(event)
 
 
  
@@ -544,7 +543,41 @@ def complete_action(task_nr):
     print("reading and converting log file...")
     read_and_convert_log_json(task_nr)
     print("solving preemptions conflicts...")
-    solve_preemptions()
+    # t1 = Process(target=solve_preemptions, args=(1,))
+    # t2 = Process(target=solve_preemptions, args=(2,))
+    # t3 = Process(target=solve_preemptions, args=(3,))
+    # t4 = Process(target=solve_preemptions, args=(4,))
+    # t1.start()
+    # t2.start()
+    # t3.start()
+    # t4.start()
+    # t1.join()
+    # t2.join()
+    # t3.join()
+    # t4.join()
+    solve_preemptions(1)
+    solve_preemptions(2)
+    solve_preemptions(3)
+    solve_preemptions(4)
+
+
+    print("discarding foulty events...")
+    t1 = multiprocessing.Process(target=discard_foulty_events, args=(1,))
+    t2 = multiprocessing.Process(target=discard_foulty_events, args=(2,))
+    t3 = multiprocessing.Process(target=discard_foulty_events, args=(3,))
+    t4 = multiprocessing.Process(target=discard_foulty_events, args=(4,))
+
+    t1.start()
+    t2.start()
+    t3.start()
+    t4.start()
+    t1.join()
+    t2.join()
+    t3.join()
+    t4.join()
+
+
+
     print("computing durations...")
     compute_duration()
     print("generating trace...")
@@ -565,12 +598,61 @@ def short_action(task_nr):
     print_info_short(task_nr)
 
 def main():
-    for task_nr in range(44,106):
+    workbook = Workbook()
+    workbook.save('exp_stats.xlsx')
+    sheet  = workbook.active
+    current_line = 3
+    current_task_set = 0
+    string_cell = "C" + str(current_line)
+    sheet[string_cell] = "WCRT analysis"
+    string_cell = "D" + str(current_line)
+    sheet[string_cell] = "prio"
+    string_cell = "E" + str(current_line)
+    sheet[string_cell] = "WCRT experiment"
+    string_cell = "F" + str(current_line)
+    sheet[string_cell] = "ART experiment"
+    string_cell = "G" + str(current_line)
+    sheet[string_cell] = "BCRT experiment"
+
+    for task_nr in range(1,106):
         print("STARING WITH TASK ", task_nr)
+
+
+
         complete_action(task_nr)
+
+
+
+        #generate excell file
+        current_task_set = current_task_set + 1
+        string_cell = "B" + str(current_task_set*4)
+        sheet[string_cell] = current_task_set
+
+        for task in task_set:
+            current_line = current_line + 1
+
+
+            string_cell = "C" + str(current_line)
+            sheet[string_cell] = round(task.WCRT_analysis)
+
+            string_cell = "D" + str(current_line)
+            sheet[string_cell] = round(task.priority)
+
+            string_cell = "E" + str(current_line)
+            sheet[string_cell] = round(task.WCRT_experiment)
+
+            string_cell = "F" + str(current_line)
+            sheet[string_cell] = round(task.ART_experiment)
+
+            string_cell = "G" + str(current_line)
+            sheet[string_cell] = round(task.BCRT_experiment)
+
+
         task_set.clear()
         event_list.clear()
         executions_list.clear()
+
+    workbook.save('exp_stats.xlsx')
 
 
 
