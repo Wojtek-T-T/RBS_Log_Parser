@@ -7,7 +7,7 @@ from openpyxl import Workbook
 import multiprocessing
 
 
-time_unit_length = 41
+time_unit_length = 80
 max_job = 300
 task_set = []
 event_list = []
@@ -32,6 +32,10 @@ class RBS_task:
         self.WCRT_experiment = 0
         self.ART_experiment = 0
         self.BCRT_experiment = 0
+        self.lastJOB = 0
+        self.periodUS = 0
+        self.firstRelTime = 0
+        self.replicasExecuted = []
 
 
 class RBS_execution:
@@ -120,12 +124,15 @@ def import_taskset(task_to_parse):
         
         #Add task to taskset list
         imported_task = RBS_task(id, P, CPU, compute_adj_matrix(E, number_of_nodes), C, T, D, S, number_of_nodes, number_of_sequences, WCRT)
+
+        #compute period in microseconds
+        imported_task.periodUS = T * time_unit_length
+
         task_set.append(imported_task)
 
     f.close()
 
 def generate_trace(task_to_parse):
-    global event_list
     string = "trace" + str(task_to_parse) + ".json"
     with open(string, "w") as outfile: 
 
@@ -166,7 +173,7 @@ def generate_trace(task_to_parse):
                         "pid": element.cpu,
                         "tid": element.cpu,
                         "ts": element.start,
-                        "dur": element.duration,
+                        "dur": (element.end - element.start),
                         "ph": "X",
                         "name": name_string,
                         "cname" : str(color)
@@ -213,6 +220,23 @@ def generate_trace(task_to_parse):
                 continue
 
         json.dump(dictionaries, outfile)
+
+def determine_replicas_ex_pattern():
+    for task in task_set:
+        for node in range(1, task.number_of_nodes + 1):
+            replicas = []
+            for i in range(0, task.number_of_sequences):
+                replicas.append(0)
+            for event in event_list:
+                if event.type != 1:
+                    continue
+                if event.task == task.id and event.node == node:
+                    replicas[event.sequence -1] = replicas[event.sequence -1] + 1
+            task.replicasExecuted.append(replicas)
+                
+
+
+    return
         
 def solve_preemptions(cpu_to_handle):
     global event_list
@@ -290,8 +314,9 @@ def compute_RTs():
         if event.type == 2:
             for execution in executions_list:
                 if execution.task == event.task and execution.job == event.job and execution.node == task_set[event.task-1].number_of_nodes:
-                    wc_response_t = (execution.end - event.start)/time_unit_length
-                    task_set[event.task-1].RTs_experiment.append(wc_response_t)
+                    response_time = (execution.end - event.start)/time_unit_length
+                    if response_time > 0:
+                        task_set[event.task-1].RTs_experiment.append(response_time)
 
 def compute_RTs_short():
     for event in event_list:
@@ -299,15 +324,12 @@ def compute_RTs_short():
             for event2 in event_list:
                 if event2.type == 1:
                     if event2.task == event.task and event2.job == event.job and event2.node == task_set[event.task-1].number_of_nodes:
-                        wc_response_t = (event2.end - event.start)/time_unit_length
-                        task_set[event.task-1].RTs_experiment.append(wc_response_t)  
+                        response_time = (event2.end - event.start)/time_unit_length
+                        if response_time > 0:
+                            task_set[event.task-1].RTs_experiment.append(response_time)  
 
 def compute_WCRT():   
     for task in task_set:
-        #task.RTs_experiment.sort()
-        #task.RTs_experiment.reverse()
-        #one_p = len(task.RTs_experiment) / 100
-        #one_p = 1
         for index in range(0, 3):
             task.RTs_experiment.pop(index)
         task.WCRT_experiment = max(task.RTs_experiment)
@@ -349,34 +371,14 @@ def add_cpu():
         if event.type != 2:
             task_index = event.task -1
             sequence_index = event.sequence -1
-            cpu = task_set[task_index].cpu[sequence_index]
+            cpu = task_set[task_index].cpu[sequence_index ]
             event.cpu = cpu
 
 def compute_duration():
     for event in event_list:
         event.duration = event.end - event.start
 
-def obtain_value(line_string, value_type, offset, end_mark):
-    index = line_string.find(value_type)
-    extra_offset = 1
-    while True:
-        temp_index = index + offset + extra_offset
-        if line_string[temp_index] == end_mark:
-            extra_offset = extra_offset - 1
-            break
-        else:
-            extra_offset = extra_offset + 1
-
-    if(extra_offset == 0):
-        return_value = line_string[index + offset]
-    else:
-        return_value = line_string[index + offset :(index + offset+ extra_offset + 1)]
-
-    return int(return_value)
-
-
 def read_and_convert_log_json(task_to_parse):
-    temp_list = []
     string = "log" + str(task_to_parse) + ".json"
     f = open(string, "r")
     log_file = json.load(f)
@@ -391,30 +393,38 @@ def read_and_convert_log_json(task_to_parse):
         start = int(log_event['start'])
         end = int(log_event['end'])
 
-        #if event_type == 1 or event_type == 2:
+        if event_type == 6:
+            task_set[task-1].firstRelTime = start
+            continue
+
         event = RBS_event(event_type, task, sequence, node, job, start, end, 1)
         event_list.append(event)
 
-    # #determine the time of the last release of the lowest period task
-    # task_lowest_period = 9999999
-    # task_lowest_period_id = 0
-    # for task in task_set:
-    #     if task.period < task_lowest_period:
-    #         task_lowest_period = task.period
-    #         task_lowest_period_id = task.id
+        #determine latest job
+        if event_type == 1:
+            if task_set[task-1].lastJOB < job:
+                task_set[task-1].lastJOB = job
 
-    # latest_release = 0
-    # for event in temp_list:
-    #     if event.type == 1 and event.task == task_lowest_period_id and event.job == max_job and event.node == task_set[task_lowest_period_id-1].number_of_nodes:
-    #         latest_release = event.start
+        #determine which replica of a node is executed the most
 
-    # for event in temp_list:
-    #     if event.start < latest_release:
-    #         event_list.append(event)
-
-
- 
     add_cpu()
+
+
+
+def generate_release_events():
+
+    for task in task_set:
+        rel_list = []
+        for job in range(1, task.lastJOB + 1):
+            start = task.firstRelTime + (task.periodUS * job)
+            event = RBS_event(2, task.id, 0, 0, job, start, 0, 1)
+            rel_list.append(event)
+        
+        rel_list.reverse()
+
+        for element in rel_list:
+            event_list.insert(0, element)
+    
 
 def print_info(task_to_parse):
     string = "experiment_outcome" + str(task_to_parse) + ".txt"
@@ -476,6 +486,20 @@ def print_info_short(task_to_parse):
     string = "experiment_outcome" + str(task_to_parse) + "_short.txt"
     with open(string, "w") as log:
 
+        string = "\nAnalyzed WCRTs: \n"
+        log.write(string)
+        deadlines = []
+        for task in task_set:
+            string = str(round(task.WCRT_analysis)) + "\n" 
+            log.write(string)
+            deadlines.append(task.deadline)
+
+        string = "\nPriorities: \n"
+        log.write(string)
+        for task in task_set:
+            string = str(round(task.priority)) + "\n" 
+            log.write(string)
+
         string = "\nWCRTs: \n"
         log.write(string)
         for task in task_set:
@@ -494,23 +518,19 @@ def print_info_short(task_to_parse):
             string = str(round(task.BCRT_experiment)) + "\n" 
             log.write(string)
 
-        string = "\nPriorities: \n"
+        string = "\ndeadlines: " +  str(deadlines)
         log.write(string)
+        log.write("\n")
+
+        log.write("\n")
+        log.write("Nodes executions per sequence: \n")
+        log.write("\n")
         for task in task_set:
-            string = str(round(task.priority)) + "\n" 
-            log.write(string)
-
-        string = "\nAnalyzed WCRTs: \n"
-        log.write(string)
-        deadlines = []
-        for task in task_set:
-            string = str(round(task.WCRT_analysis)) + "\n" 
-            log.write(string)
-            deadlines.append(task.deadline)
-
-
-        string = "\ndeadline: " +  str(deadlines)
-        log.write(string)
+            for element in task.replicasExecuted:
+                log.write(str(element))
+                log.write("\n")
+            
+            log.write("\n\n")
 
         for task in task_set:
             log.write("\n\n")
@@ -535,6 +555,7 @@ def compute_statistics_short():
     compute_WCRT()
     compute_BCRT()
     compute_ART()
+    determine_replicas_ex_pattern()
 
 
 def complete_action(task_nr):
@@ -543,40 +564,11 @@ def complete_action(task_nr):
     print("reading and converting log file...")
     read_and_convert_log_json(task_nr)
     print("solving preemptions conflicts...")
-    # t1 = Process(target=solve_preemptions, args=(1,))
-    # t2 = Process(target=solve_preemptions, args=(2,))
-    # t3 = Process(target=solve_preemptions, args=(3,))
-    # t4 = Process(target=solve_preemptions, args=(4,))
-    # t1.start()
-    # t2.start()
-    # t3.start()
-    # t4.start()
-    # t1.join()
-    # t2.join()
-    # t3.join()
-    # t4.join()
+
     solve_preemptions(1)
     solve_preemptions(2)
     solve_preemptions(3)
     solve_preemptions(4)
-
-
-    print("discarding foulty events...")
-    t1 = multiprocessing.Process(target=discard_foulty_events, args=(1,))
-    t2 = multiprocessing.Process(target=discard_foulty_events, args=(2,))
-    t3 = multiprocessing.Process(target=discard_foulty_events, args=(3,))
-    t4 = multiprocessing.Process(target=discard_foulty_events, args=(4,))
-
-    t1.start()
-    t2.start()
-    t3.start()
-    t4.start()
-    t1.join()
-    t2.join()
-    t3.join()
-    t4.join()
-
-
 
     print("computing durations...")
     compute_duration()
@@ -592,6 +584,9 @@ def short_action(task_nr):
     import_taskset(task_nr)
     print("reading and converting log file...")
     read_and_convert_log_json(task_nr)
+    generate_release_events()
+    print("generating trace...")
+    generate_trace(task_nr)
     print("Computing statistics...")
     compute_statistics_short()
     print("printing statistics to file...")
@@ -614,12 +609,12 @@ def main():
     string_cell = "G" + str(current_line)
     sheet[string_cell] = "BCRT experiment"
 
-    for task_nr in range(1,106):
+    for task_nr in range(1,2):
         print("STARING WITH TASK ", task_nr)
 
 
 
-        complete_action(task_nr)
+        short_action(task_nr)
 
 
 
@@ -648,6 +643,8 @@ def main():
             sheet[string_cell] = round(task.BCRT_experiment)
 
 
+
+        workbook.save('exp_stats.xlsx')
         task_set.clear()
         event_list.clear()
         executions_list.clear()
