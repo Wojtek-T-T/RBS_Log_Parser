@@ -6,12 +6,25 @@ import openpyxl
 from openpyxl import Workbook
 import multiprocessing
 
+import scipy.io
 
-time_unit_length = 80
+#SETTINGS
+time_unit_length = 42
+number_of_sets = 400
+
+
+
 max_job = 300
 task_set = []
 event_list = []
 executions_list = []
+
+matlab_WCRT = []
+matlab_WCRT_analysis = []
+matlab_P = []
+matlab_BCRT = []
+matlab_ART = []
+matlab_PRIO = []
 
 class RBS_task:
     def __init__(self, id, P, CPU, A, C, T, D, S, number_of_nodes, number_of_sequences, WCRT):
@@ -330,8 +343,13 @@ def compute_RTs_short():
 
 def compute_WCRT():   
     for task in task_set:
-        for index in range(0, 3):
-            task.RTs_experiment.pop(index)
+        three_proc = (round(task.lastJOB*0.03))
+        for index in range(0, three_proc+1):
+            #task.RTs_experiment.pop(index)
+            max_value = max(task.RTs_experiment)
+            task.RTs_experiment.remove(max_value)
+        #max_value = max(task.RTs_experiment)
+        #task.RTs_experiment.remove(max_value)
         task.WCRT_experiment = max(task.RTs_experiment)
 
 
@@ -539,6 +557,9 @@ def print_info_short(task_to_parse):
             for element in task.RTs_experiment:
                 string = str(round(element,2)) + "\n"
                 log.write(string)
+
+def sort_by_prio(task):
+    return 100 - task.priority
     
 
 def compute_statistics():
@@ -594,7 +615,7 @@ def short_action(task_nr):
 
 def main():
     workbook = Workbook()
-    workbook.save('exp_stats.xlsx')
+    workbook.save('exp_stats_nl_1000.xlsx')
     sheet  = workbook.active
     current_line = 3
     current_task_set = 0
@@ -608,8 +629,12 @@ def main():
     sheet[string_cell] = "ART experiment"
     string_cell = "G" + str(current_line)
     sheet[string_cell] = "BCRT experiment"
+    string_cell = "H" + str(current_line)
+    sheet[string_cell] = "Num nodes"
+    string_cell = "I" + str(current_line)
+    sheet[string_cell] = "Num seq"
 
-    for task_nr in range(1,2):
+    for task_nr in range(1,number_of_sets + 1):
         print("STARING WITH TASK ", task_nr)
 
 
@@ -623,6 +648,7 @@ def main():
         string_cell = "B" + str(current_task_set*4)
         sheet[string_cell] = current_task_set
 
+        task_set.sort(key=sort_by_prio)
         for task in task_set:
             current_line = current_line + 1
 
@@ -642,15 +668,32 @@ def main():
             string_cell = "G" + str(current_line)
             sheet[string_cell] = round(task.BCRT_experiment)
 
+            string_cell = "H" + str(current_line)
+            sheet[string_cell] = round(task.number_of_nodes)
+
+            string_cell = "I" + str(current_line)
+            sheet[string_cell] = round(task.number_of_sequences)
+
+            #For matlab file
+            matlab_WCRT_analysis.append(round(task.WCRT_analysis))
+            matlab_WCRT.append( round(task.WCRT_experiment))
+            matlab_BCRT.append(round(task.BCRT_experiment))
+            matlab_ART.append(round(task.ART_experiment))
+            matlab_PRIO.append(task.priority)
 
 
-        workbook.save('exp_stats.xlsx')
+
+
+        workbook.save('exp_stats_nl_1000.xlsx')
         task_set.clear()
         event_list.clear()
         executions_list.clear()
 
-    workbook.save('exp_stats.xlsx')
+        #print matlab file
+        obj_arr = [np.array(matlab_WCRT_analysis), np.array(matlab_WCRT), np.array(matlab_BCRT), np.array(matlab_ART), np.array(matlab_PRIO)]
+        scipy.io.savemat('log_file_parsed.mat', mdict={'Log_parsed': obj_arr})
 
+    workbook.save('exp_stats_nl_1000.xlsx')
 
 
 
