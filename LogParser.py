@@ -25,6 +25,8 @@ matlab_P = []
 matlab_BCRT = []
 matlab_ART = []
 matlab_PRIO = []
+matlab_rel_overhead = []
+matlab_number_of_sequences = []
 
 class RBS_task:
     def __init__(self, id, P, CPU, A, C, T, D, S, number_of_nodes, number_of_sequences, WCRT):
@@ -49,6 +51,9 @@ class RBS_task:
         self.periodUS = 0
         self.firstRelTime = 0
         self.replicasExecuted = []
+        self.total_rel_overhead = []
+        self.avg_rel_overhead = 0
+
 
 
 class RBS_execution:
@@ -105,8 +110,8 @@ def compute_adj_matrix(A, number_of_nodes):
 
     return adj_matrix
 
-def import_taskset(task_to_parse):
-    string = "taskset" + str(task_to_parse) + ".json"
+def import_taskset():
+    string = "taskset.json"
     f = open(string, "r")
     data = json.load(f)
     
@@ -145,8 +150,8 @@ def import_taskset(task_to_parse):
 
     f.close()
 
-def generate_trace(task_to_parse):
-    string = "trace" + str(task_to_parse) + ".json"
+def generate_trace():
+    string = "trace.json"
     with open(string, "w") as outfile: 
 
         dictionaries = []  
@@ -204,16 +209,7 @@ def generate_trace(task_to_parse):
                     "ph": "i",
                     "name": name_string,
                     "s": "g"
-                }
-
-                # dictionary = {
-                #         "pid": element.cpu,
-                #         "tid": element.cpu,
-                #         "ts": element.start,
-                #         "dur": (element.end - element.start),
-                #         "ph": "X",
-                #         "name": name_string
-                #         }               
+                }          
 
                 dictionaries.append(dictionary)
 
@@ -339,7 +335,21 @@ def compute_RTs_short():
                     if event2.task == event.task and event2.job == event.job and event2.node == task_set[event.task-1].number_of_nodes:
                         response_time = (event2.end - event.start)/time_unit_length
                         if response_time > 0:
-                            task_set[event.task-1].RTs_experiment.append(response_time)  
+                            task_set[event.task-1].RTs_experiment.append(response_time) 
+
+
+def compute_release_overhead():
+    for event in event_list:
+        if event.type == 2:
+            for event2 in event_list:
+                if event2.type == 1:
+                    if event2.task == event.task and event2.job == event.job and event2.node == 1:
+                        overhead  = (event2.start - event.start)
+                        if overhead > 0:
+                            task_set[event.task-1].total_rel_overhead.append(overhead) 
+
+    for task in task_set:
+        task.avg_rel_overhead = sum(task.total_rel_overhead)/len(task.total_rel_overhead)  
 
 def compute_WCRT():   
     for task in task_set:
@@ -396,8 +406,8 @@ def compute_duration():
     for event in event_list:
         event.duration = event.end - event.start
 
-def read_and_convert_log_json(task_to_parse):
-    string = "log" + str(task_to_parse) + ".json"
+def read_and_convert_log_json():
+    string = "log.json"
     f = open(string, "r")
     log_file = json.load(f)
 
@@ -500,8 +510,8 @@ def print_info(task_to_parse):
                 string = str(round(element,2)) + "\n"
                 log.write(string)
 
-def print_info_short(task_to_parse):   
-    string = "experiment_outcome" + str(task_to_parse) + "_short.txt"
+def print_info_short():   
+    string = "experiment_outcome_short.txt"
     with open(string, "w") as log:
 
         string = "\nAnalyzed WCRTs: \n"
@@ -576,46 +586,47 @@ def compute_statistics_short():
     compute_WCRT()
     compute_BCRT()
     compute_ART()
+    compute_release_overhead()
     determine_replicas_ex_pattern()
 
 
-def complete_action(task_nr):
+# def complete_action(task_nr):
+#     print("importing tasks data...")
+#     import_taskset(task_nr)
+#     print("reading and converting log file...")
+#     read_and_convert_log_json(task_nr)
+#     print("solving preemptions conflicts...")
+
+#     solve_preemptions(1)
+#     solve_preemptions(2)
+#     solve_preemptions(3)
+#     solve_preemptions(4)
+
+#     print("computing durations...")
+#     compute_duration()
+#     print("generating trace...")
+#     generate_trace(task_nr)
+#     print("Computing statistics...")
+#     compute_statistics()
+#     print("printing statistics to file...")
+#     print_info(task_nr)
+
+def short_action():
     print("importing tasks data...")
-    import_taskset(task_nr)
+    import_taskset()
     print("reading and converting log file...")
-    read_and_convert_log_json(task_nr)
-    print("solving preemptions conflicts...")
-
-    solve_preemptions(1)
-    solve_preemptions(2)
-    solve_preemptions(3)
-    solve_preemptions(4)
-
-    print("computing durations...")
-    compute_duration()
-    print("generating trace...")
-    generate_trace(task_nr)
-    print("Computing statistics...")
-    compute_statistics()
-    print("printing statistics to file...")
-    print_info(task_nr)
-
-def short_action(task_nr):
-    print("importing tasks data...")
-    import_taskset(task_nr)
-    print("reading and converting log file...")
-    read_and_convert_log_json(task_nr)
+    read_and_convert_log_json()
     generate_release_events()
     print("generating trace...")
-    generate_trace(task_nr)
+    generate_trace()
     print("Computing statistics...")
     compute_statistics_short()
     print("printing statistics to file...")
-    print_info_short(task_nr)
+    print_info_short()
 
 def main():
     workbook = Workbook()
-    workbook.save('exp_stats_nl_1000.xlsx')
+    workbook.save('exp_stats.xlsx')
     sheet  = workbook.active
     current_line = 3
     current_task_set = 0
@@ -633,67 +644,59 @@ def main():
     sheet[string_cell] = "Num nodes"
     string_cell = "I" + str(current_line)
     sheet[string_cell] = "Num seq"
-
-    for task_nr in range(1,number_of_sets + 1):
-        print("STARING WITH TASK ", task_nr)
-
+    string_cell = "J" + str(current_line)
+    sheet[string_cell] = "rel overhead"
 
 
-        short_action(task_nr)
+    print("STARING WITH TASK PARSING")
+    short_action()
+    for event in event_list:
+        if event.task == 4 and event.node == 1 and event.job == 1:
+            print(event.start)
+    #generate excell file
+    current_task_set = current_task_set + 1
+    string_cell = "B" + str(current_task_set*4)
+    sheet[string_cell] = current_task_set
+    task_set.sort(key=sort_by_prio)
+    for task in task_set:
+        current_line = current_line + 1
+        string_cell = "C" + str(current_line)
+        sheet[string_cell] = round(task.WCRT_analysis)
+        string_cell = "D" + str(current_line)
+        sheet[string_cell] = round(task.priority)
+        string_cell = "E" + str(current_line)
+        sheet[string_cell] = round(task.WCRT_experiment)
+        string_cell = "F" + str(current_line)
+        sheet[string_cell] = round(task.ART_experiment)
+        string_cell = "G" + str(current_line)
+        sheet[string_cell] = round(task.BCRT_experiment)
+        string_cell = "H" + str(current_line)
+        sheet[string_cell] = round(task.number_of_nodes)
+        string_cell = "I" + str(current_line)
+        sheet[string_cell] = round(task.number_of_sequences)
+        string_cell = "J" + str(current_line)
+        sheet[string_cell] = round(task.avg_rel_overhead)
+        #For matlab file
+        matlab_WCRT_analysis.append(round(task.WCRT_analysis))
+        matlab_WCRT.append( round(task.WCRT_experiment))
+        matlab_BCRT.append(round(task.BCRT_experiment))
+        matlab_ART.append(round(task.ART_experiment))
+        matlab_PRIO.append(task.priority)
+        #if task.priority == 98:
+           # matlab_rel_overhead.append(task.avg_rel_overhead)
+           # matlab_number_of_sequences.append(task.number_of_sequences)
+        
+    workbook.save('exp_stats.xlsx')
+    task_set.clear()
+    event_list.clear()
+    executions_list.clear()
+    #print matlab file
+    obj_arr = [np.array(matlab_WCRT_analysis), np.array(matlab_WCRT), np.array(matlab_BCRT), np.array(matlab_ART), np.array(matlab_PRIO)]
+    scipy.io.savemat('exp_stats.mat', mdict={'Exp_Stats': obj_arr})
+    #obj_arr2 = [np.array(matlab_rel_overhead), np.array(matlab_number_of_sequences)]
+    #scipy.io.savemat('rel_overhead2.mat', mdict={'Rel_overhead2': obj_arr2})
 
-
-
-        #generate excell file
-        current_task_set = current_task_set + 1
-        string_cell = "B" + str(current_task_set*4)
-        sheet[string_cell] = current_task_set
-
-        task_set.sort(key=sort_by_prio)
-        for task in task_set:
-            current_line = current_line + 1
-
-
-            string_cell = "C" + str(current_line)
-            sheet[string_cell] = round(task.WCRT_analysis)
-
-            string_cell = "D" + str(current_line)
-            sheet[string_cell] = round(task.priority)
-
-            string_cell = "E" + str(current_line)
-            sheet[string_cell] = round(task.WCRT_experiment)
-
-            string_cell = "F" + str(current_line)
-            sheet[string_cell] = round(task.ART_experiment)
-
-            string_cell = "G" + str(current_line)
-            sheet[string_cell] = round(task.BCRT_experiment)
-
-            string_cell = "H" + str(current_line)
-            sheet[string_cell] = round(task.number_of_nodes)
-
-            string_cell = "I" + str(current_line)
-            sheet[string_cell] = round(task.number_of_sequences)
-
-            #For matlab file
-            matlab_WCRT_analysis.append(round(task.WCRT_analysis))
-            matlab_WCRT.append( round(task.WCRT_experiment))
-            matlab_BCRT.append(round(task.BCRT_experiment))
-            matlab_ART.append(round(task.ART_experiment))
-            matlab_PRIO.append(task.priority)
-
-
-
-
-        workbook.save('exp_stats_nl_1000.xlsx')
-        task_set.clear()
-        event_list.clear()
-        executions_list.clear()
-
-        #print matlab file
-        obj_arr = [np.array(matlab_WCRT_analysis), np.array(matlab_WCRT), np.array(matlab_BCRT), np.array(matlab_ART), np.array(matlab_PRIO)]
-        scipy.io.savemat('log_file_parsed.mat', mdict={'Log_parsed': obj_arr})
-
-    workbook.save('exp_stats_nl_1000.xlsx')
+    workbook.save('exp_stats.xlsx')
 
 
 
